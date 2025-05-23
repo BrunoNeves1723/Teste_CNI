@@ -1,0 +1,114 @@
+import requests
+import pandas as pd
+import json # Import json para lidar com valores que podem ser listas ou dicionários
+import traceback # Para mensagens de erro mais detalhadas
+
+# URL fornecida (retorna metadados da tabela)
+URL_IPCA = "https://sidra.ibge.gov.br/Ajax/Json/Tabela/1/1737?versao=-1"
+NOME_ARQUIVO_PARQUET = "dados_ipca_metadados.parquet" # Nome do arquivo alterado
+
+def buscar_dados_ibge(url: str):
+    """
+    Função para buscar os dados da URL do SIDRA IBGE.
+    """
+    print(f"Buscando dados de: {url}")
+    try:
+        resposta = requests.get(url, timeout=30)
+        resposta.raise_for_status()
+        print("Dados recebidos com sucesso!")
+        return resposta.json()
+    except requests.exceptions.HTTPError as http_err:
+        print(f"Erro HTTP ao buscar dados: {http_err}")
+    except requests.exceptions.ConnectionError as conn_err:
+        print(f"Erro de conexão: {conn_err}")
+    except requests.exceptions.Timeout as timeout_err:
+        print(f"Tempo de requisição esgotado: {timeout_err}")
+    except requests.exceptions.RequestException as req_err:
+        print(f"Erro na requisição: {req_err}")
+    except json.JSONDecodeError as json_err:
+        print(f"Erro ao decodificar JSON: {json_err}. Conteúdo recebido: {resposta.text[:200]}...")
+    return None
+
+def processar_dados_para_dataframe(dados_json: dict) -> pd.DataFrame | None:
+    """
+    Função para processar um dicionário de metadados e convertê-lo em um DataFrame.
+    """
+    print(f"Tipo de dados_json recebido: {type(dados_json)}")
+    if not isinstance(dados_json, dict):
+        print(f"Formato de dados inesperado. Esperava um dicionário, recebeu {type(dados_json)}")
+        return None
+
+    print("Processando dicionário de metadados para formato tabular...")
+    try:
+        items_para_df = []
+        for key, value in dados_json.items():
+            # Se o valor for uma lista ou outro dicionário, convertê-lo para uma representação de string
+            # para que possa ser armazenado em uma única célula do DataFrame.
+            if isinstance(value, (list, dict)):
+                # Usar json.dumps para converter listas/dicionários em string JSON
+                # ensure_ascii=False para lidar corretamente com caracteres acentuados
+                valor_processado = json.dumps(value, ensure_ascii=False, indent=2)
+            else:
+                valor_processado = str(value) # Converte outros tipos para string
+
+            items_para_df.append({'Chave': key, 'Valor': valor_processado})
+
+        df = pd.DataFrame(items_para_df)
+
+        print("Dicionário processado e DataFrame criado com sucesso!")
+        print(f"O DataFrame possui {df.shape[0]} linhas e {df.shape[1]} colunas.")
+        print("Conteúdo do DataFrame (Metadados da Tabela):")
+        print(df) # Mostra o DataFrame inteiro (pode ser longo)
+        # Para melhor visualização de colunas longas no console:
+        # with pd.option_context('display.max_colwidth', None):
+        # print(df)
+        return df
+    except Exception as e:
+        print(f"Erro ao processar o dicionário e criar DataFrame: {e}")
+        traceback.print_exc() # Imprime a trilha de erro completa
+        return None
+
+def salvar_dataframe_em_parquet(df: pd.DataFrame, nome_arquivo: str) -> bool:
+    """
+    Função para salvar um DataFrame do Pandas em um arquivo Parquet.
+    """
+    if df is None or df.empty:
+        print("DataFrame vazio ou inválido. Nada para salvar.")
+        return False
+
+    print(f"Salvando DataFrame no arquivo Parquet: {nome_arquivo}...")
+    try:
+        df.to_parquet(nome_arquivo, engine='pyarrow', index=False)
+        print(f"Arquivo '{nome_arquivo}' salvo com sucesso!")
+        return True
+    except Exception as e:
+        print(f"Erro ao salvar o arquivo Parquet: {e}")
+        traceback.print_exc() # Imprime a trilha de erro completa
+        return False
+
+def main():
+    """
+    Função principal que orquestra a busca, processamento e salvamento dos dados.
+    """
+    print("--- Iniciando Robô de Captura de Dados do IPCA ---")
+
+    dados_brutos_json = buscar_dados_ibge(URL_IPCA)
+
+    if dados_brutos_json:
+        dataframe_resultado = processar_dados_para_dataframe(dados_brutos_json)
+
+        if dataframe_resultado is not None and not dataframe_resultado.empty: # Corrigido para dataframe_resultado
+            sucesso_salvar = salvar_dataframe_em_parquet(dataframe_resultado, NOME_ARQUIVO_PARQUET)
+            if sucesso_salvar:
+                print(f"Processo concluído! Arquivo '{NOME_ARQUIVO_PARQUET}' gerado.")
+            else:
+                print("Processo concluído com falha ao salvar o arquivo.")
+        else:
+            print("Processo interrompido devido a erro no processamento dos dados ou DataFrame vazio.")
+    else:
+        print("Processo interrompido devido a erro na busca dos dados.")
+
+    print("--- Robô de Captura de Dados do IPCA Finalizado ---")
+
+if __name__ == "__main__":
+    main()
