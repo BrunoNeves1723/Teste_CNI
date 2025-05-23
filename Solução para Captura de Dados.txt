@@ -1,0 +1,3 @@
+Solução para Captura de Dados com Navegação Web
+
+Quando um link direto para os dados não está disponível e é necessário interagir com a página web (como clicar em menus, preencher formulários, fazer login, ou clicar em botões para gerar/baixar o arquivo). Há também dentro do Python algumas bibliotecas que permitem navegar por dentro navegador web, e, a partir daí analisar o html e extrair informações
