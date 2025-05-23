@@ -1,6 +1,6 @@
 import requests
 import pandas as pd
-import json # Import json para lidar com valores que podem ser listas ou dicionários
+import json # Import json para lida com valores que podem ser listas ou dicionarios
 import traceback # Para mensagens de erro mais detalhadas
 
 # URL fornecida (retorna metadados da tabela)
@@ -9,7 +9,7 @@ NOME_ARQUIVO_PARQUET = "dados_ipca_metadados.parquet" # Nome do arquivo alterado
 
 def buscar_dados_ibge(url: str):
     """
-    Função para buscar os dados da URL do SIDRA IBGE.
+    Essa Funcaoo para buscar os dados da URL do SIDRA IBGE.
     """
     print(f"Buscando dados de: {url}")
     try:
@@ -31,7 +31,7 @@ def buscar_dados_ibge(url: str):
 
 def processar_dados_para_dataframe(dados_json: dict) -> pd.DataFrame | None:
     """
-    Função para processar um dicionário de metadados e convertê-lo em um DataFrame.
+    Função para processar um dicionario de metadados e converte em um DataFrame.
     """
     print(f"Tipo de dados_json recebido: {type(dados_json)}")
     if not isinstance(dados_json, dict):
@@ -42,10 +42,10 @@ def processar_dados_para_dataframe(dados_json: dict) -> pd.DataFrame | None:
     try:
         items_para_df = []
         for key, value in dados_json.items():
-            # Se o valor for uma lista ou outro dicionário, convertê-lo para uma representação de string
-            # para que possa ser armazenado em uma única célula do DataFrame.
+            # Se o valor for uma lista ou outro dicionario, converte para uma representação de string
+            # para que possa ser armazenado em uma unica célula do DataFrame.
             if isinstance(value, (list, dict)):
-                # Usar json.dumps para converter listas/dicionários em string JSON
+                # Usar json.dumps para converter listas/dicionarios em string JSON
                 # ensure_ascii=False para lidar corretamente com caracteres acentuados
                 valor_processado = json.dumps(value, ensure_ascii=False, indent=2)
             else:
@@ -70,7 +70,7 @@ def processar_dados_para_dataframe(dados_json: dict) -> pd.DataFrame | None:
 
 def salvar_dataframe_em_parquet(df: pd.DataFrame, nome_arquivo: str) -> bool:
     """
-    Função para salvar um DataFrame do Pandas em um arquivo Parquet.
+    Funaoo para salvar um DataFrame do Pandas em um arquivo Parquet.
     """
     if df is None or df.empty:
         print("DataFrame vazio ou inválido. Nada para salvar.")
@@ -88,7 +88,7 @@ def salvar_dataframe_em_parquet(df: pd.DataFrame, nome_arquivo: str) -> bool:
 
 def main():
     """
-    Função principal que orquestra a busca, processamento e salvamento dos dados.
+    Funcao principal que orquestra a busca, processamento e salvamento dos dados.
     """
     print("--- Iniciando Robô de Captura de Dados do IPCA ---")
 
